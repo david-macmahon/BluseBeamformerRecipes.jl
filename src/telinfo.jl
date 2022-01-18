@@ -32,7 +32,7 @@ function TelInfo(yaml::Dict{Symbol,Any})
 end
 
 """
-    TelInfo(yaml::Dict{Symbol,Any})
+    TelInfo(yaml::AbstractString)
 
 Create a `TelInfo` instance based on a "telinfo.yml" file named by `yaml`.
 """
