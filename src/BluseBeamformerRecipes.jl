@@ -120,7 +120,7 @@ function BeamformerRecipes.BeamformerRecipe(
         end
 
         # Step tobs
-        tobs .+ Δt
+        tobs .+= Δt
     end
 
     # Subtract boresight delay and rate from each antenna,beam
