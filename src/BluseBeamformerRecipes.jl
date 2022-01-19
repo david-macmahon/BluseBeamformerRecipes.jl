@@ -32,7 +32,8 @@ Create a BeamformerRecipe and populate the following fields:
 function BeamformerRecipes.BeamformerRecipe(
     rawname::AbstractString;
     redis::RedisConnection=RedisConnection(host="redishost"),
-    telinfo_file::AbstractString=joinpath(ENV["HOME"], "telinfo.yml")
+    telinfo_file::AbstractString=joinpath(ENV["HOME"], "telinfo.yml"),
+    ring_arcsec=10
 )
     # Read GuppiRaw.Header from `rawname`
     @info "reading header from $rawname"
@@ -63,7 +64,7 @@ function BeamformerRecipes.BeamformerRecipe(
 
     # Get beam positions
     nrings = 4
-    beam_positions = beamrings(α, δ, nrings=nrings)
+    beam_positions = beamrings(α, δ, nrings=nrings, dϕ=deg2rad(ring_arcsec/3600))
     beam_names = ["B$(b)R$(r)" for r=1:nrings for b=1:6r]
     pushfirst!(beam_names, "BORESIGHT")
     nbeams = length(beam_names)
