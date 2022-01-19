@@ -8,7 +8,6 @@ for name in names(BeamformerRecipes)
 end
 
 include("telinfo.jl")
-include("calinfo.jl")
 
 function caldata(redis, arrayname, unixtime)
     # zrevrangebyscore returns an OrderedSet
