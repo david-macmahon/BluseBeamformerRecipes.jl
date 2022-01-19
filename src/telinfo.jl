@@ -39,3 +39,19 @@ Create a `TelInfo` instance based on a "telinfo.yml" file named by `yaml`.
 function BeamformerRecipes.TelInfo(yaml::AbstractString)
     BeamformerRecipes.TelInfo(YAML.load_file(yaml, dicttype=Dict{Symbol,Any}))
 end
+
+"""
+    antpos_topo_xyz(telinfo::TelInfo)
+
+Return `telinfo.antenna_positions` from meters in given frame to nanoseconds in
+topocentric XYZ frame.
+"""
+function antpos_topo_xyz(telinfo::TelInfo)
+    # If telinfo frame is nothing, assume enu
+    inframe = something(telinfo.antenna_position_frame, "enu")
+    if inframe == "enu"
+        antpos = enu2xyz(telinfo.antenna_positions, deg2rad(telinfo.latitude), 0)
+    else
+        error("unsupported antenna position frame: $inframe")
+    end
+end
