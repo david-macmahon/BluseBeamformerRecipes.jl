@@ -61,19 +61,19 @@ end
 """
     fch1(grh::guppiraw.header)
 
-Get frequency of first channel of entire band (not just grh's sub-band) in Hz.
+Get frequency of first channel of entire band (not just grh's sub-band) in GHz.
 """
 function fch1(grh::GuppiRaw.Header)
-    (chanfreq(grh, 1) - grh[:schan] * grh[:chan_bw]) * 1e6
+    (chanfreq(grh, 1) - grh[:schan] * grh[:chan_bw]) / 1e3
 end
 
 """
     fch1(grh::guppiraw.header)
 
-Get coarse channel frequency step size (aka width) in Hz.
+Get coarse channel frequency step size (aka width) in GHz.
 """
 function foff(grh::GuppiRaw.Header)
-    grh[:chan_bw] * 1e6
+    grh[:chan_bw] / 1e3
 end
 
 """
