@@ -8,7 +8,7 @@ using YAML
 Create a `TelInfo` instance based on `yaml` which was loaded from a "telinfo.yml"
 file.
 """
-function TelInfo(yaml::Dict{Symbol,Any})
+function BeamformerRecipes.TelInfo(yaml::Dict{Symbol,Any})
     ti = BeamformerRecipes.TelInfo()
     # Populate the easy fields first
     ti.antenna_position_frame = string(get(yaml, :antenna_position_frame, nothing))
@@ -36,6 +36,6 @@ end
 
 Create a `TelInfo` instance based on a "telinfo.yml" file named by `yaml`.
 """
-function TelInfo(yaml::AbstractString)
-    TelInfo(YAML.load_file(yaml, dicttype=Dict{Symbol,Any}))
+function BeamformerRecipes.TelInfo(yaml::AbstractString)
+    BeamformerRecipes.TelInfo(YAML.load_file(yaml, dicttype=Dict{Symbol,Any}))
 end
