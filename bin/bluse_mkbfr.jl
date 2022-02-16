@@ -57,7 +57,7 @@ else
         if ispath(h5name)
             @warn "refusing to overwrite existing path" _module=nothing _file=nothing
         else
-            isdir(h5dir) || mkdir(h5dir)
+            isdir(h5dir) || mkpath(h5dir)
             to_hdf5(h5name, bfr)
         end
     end
