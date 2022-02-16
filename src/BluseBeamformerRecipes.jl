@@ -40,10 +40,10 @@ function BeamformerRecipes.BeamformerRecipe(
     grh = open(io->read(io, GuppiRaw.Header), rawname)
 
     subname = subarray_name(grh)
-    start = starttime(grh)
+    tstart = starttime(grh)
 
     # Read cal_solution from redis
-    nants, nchan, ants, cals = cal_solution(redis, subname, start)
+    nants, nchan, ants, cals = cal_solution(redis, subname, tstart)
 
     # Load telinfo and then filter/reorder according to nants
     telinfo=TelInfo(telinfo_file)
@@ -65,28 +65,33 @@ function BeamformerRecipes.BeamformerRecipe(
     # Get beam positions
     nrings = 4
     beam_positions = beamrings(α, δ, nrings=nrings, dϕ=deg2rad(ring_arcsec/3600))
-    beam_names = ["B$(b)R$(r)" for r=1:nrings for b=1:6r]
-    pushfirst!(beam_names, "BORESIGHT")
+
+    # Get beam names
+    src_name = get(grh, "SRC_NAME", "UNKNOWN")
+    beam_names = ["$(src_name)_R$(r)B$(b)" for r=1:nrings for b=1:6r]
+    pushfirst!(beam_names, src_name)
     nbeams = length(beam_names)
 
-    # Get delays and delay rates each second for 300 seconds
-    ntimes = 300
+    # Time step is 1 second (for now)
+    Δt = 1.0
+    Δjd = Δt/86400
+
+    # Get delays and delay rates each Δt for "DWELL" (or 300) seconds
+    ntimes = ceil(Int, get(grh, "DWELL", 300) / Δt)
     delays = Array{Float64}(undef, nants, nbeams, ntimes)
     rates = Array{Float64}(undef, nants, nbeams, ntimes)
+    times = collect(range(tstart, step=Δt, length=ntimes))
+    jdstart = datetime2julian(unix2datetime(tstart))
+    jds = collect(range(jdstart, step=Δjd, length=ntimes))
 
-    Δt = 1.0
-    times = collect(range(start, step=Δt, length=ntimes))
+    # Use a single dut1 value for the entire scan.  Use value from RAW header,
+    # if present, otherwise use value from EarthOrientation for nearest midnight
+    # to jdstart.
+    jdmid = floor(jdstart - 0.5) + 0.5
+    dut1 = get(grh, "UT1_UTC", EarthOrientation.getΔUT1(jdmid))
 
-    jd = datetime2julian(unix2datetime(start))
-    Δjd = 1/86400
-    jds = collect(range(jd, step=Δjd, length=ntimes))
-
-    # Use a single dut1 value for the entire scan
-    jdmid = jd + Δjd * ntimes/2
-    dut1 = EarthOrientation.getΔUT1(jdmid)
-
-    # Get hour angles and declinations for each beam at start
-    hdobs = radec2hadec(beam_positions, jd,
+    # Get hour angles and declinations for each beam at jdstart
+    hdobs = radec2hadec(beam_positions, jdstart,
         latitude=telinfo.latitude,
         longitude=telinfo.longitude,
         altitude=telinfo.altitude,
