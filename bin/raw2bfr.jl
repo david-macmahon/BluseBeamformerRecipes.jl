@@ -7,14 +7,14 @@ exec julia --color=yes --startup-file=no "${BASH_SOURCE[0]}" "$@"
 # Example: Find all *.0000.raw files under /buf0ro and make beamformer recipe
 #          files for them under /home/obs:
 #
-#     bluse_mkbfr.jl /home/obs `find /buf0ro -name '*.0000.raw' -size +64M`
+#     raw2bfr.jl /home/obs `find /buf0ro -name '*.0000.raw' -size +64M`
 #
 # The spacing of the beam "rings" can be controlled by setting BFRING=<arcsec>
 #
 # Example: Same as previous example, but separate rings by 1 arcminute rather
 # than the default of 10 arcseconds:
 #
-#     BFRING=60 bluse_mkbfr.jl /home/obs `find /buf0ro -name '*.0000.raw' -size +64M`
+#     BFRING=60 raw2bfr.jl /home/obs `find /buf0ro -name '*.0000.raw' -size +64M`
 
 using BluseBeamformerRecipes
 
