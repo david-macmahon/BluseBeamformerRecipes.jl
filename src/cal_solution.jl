@@ -67,5 +67,9 @@ function cal_solution(redis, arrayname, unixtime)
     cals[:cal_all] = cal_all
     cals[:refant] = strcals["refant"]
 
+    # (Un-)conjugate cal_all antenna data upto refant
+    refant_idx = findfirst(==(cals[:refant]), ants)
+    @views conj!(cals[:cal_all][1:refant_idx-1, :, :])
+
     nants, nchan, ants, cals
 end
