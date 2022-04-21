@@ -18,6 +18,7 @@ end
 include("telinfo.jl")
 include("cal_solution.jl")
 include("guppiraw.jl")
+include("redisguppi.jl")
 
 """
     BeamformerRecipe(grh, beam_names, beam_positions; redis, telinfo_file)
