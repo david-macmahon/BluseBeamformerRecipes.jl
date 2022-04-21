@@ -20,24 +20,29 @@ include("cal_solution.jl")
 include("guppiraw.jl")
 
 """
-    BeamformerRecipes.BeamformerRecipe(rawname; redis, telinfo_file)
+    BeamformerRecipe(grh, beam_names, beam_positions; redis, telinfo_file)
 
-Create a BeamformerRecipe and populate the following fields:
+Create a BeamformerRecipe for the scan described by `grh` (a `GuppiRaw.Header`
+object) with beams whose names are given by `beam_names` and whose positions are
+given as `beam_positions`.  Ancillary info from `redis` and `telinfo_file` will
+be used.
 
-- `DimInfo` (all but `nbeams` and `ntimes`)
+The following fields will be
+populated:
+
+- `DimInfo`
 - `TelInfo`
 - `ObsInfo`
 - `CalInfo`
 """
 function BeamformerRecipes.BeamformerRecipe(
-    rawname::AbstractString;
+    grh::GuppiRaw.Header, beam_names, beam_positions;
     redis::RedisConnection=RedisConnection(host="redishost"),
-    telinfo_file::AbstractString=joinpath(ENV["HOME"], "telinfo.yml"),
-    ring_arcsec=10
+    telinfo_file::AbstractString=joinpath(ENV["HOME"], "telinfo.yml")
 )
-    # Read GuppiRaw.Header from `rawname`
-    @info "reading header from $rawname"
-    grh = open(io->read(io, GuppiRaw.Header), rawname)
+    # Get number of beams
+    @assert length(beam_names) == size(beam_positions, 2) "beam names and positions size mismatch"
+    nbeams = length(beam_names)
 
     subname = subarray_name(grh)
     tstart = starttime(grh)
@@ -58,20 +63,6 @@ function BeamformerRecipes.BeamformerRecipe(
     # Create frequency array
     freqs=collect(range(fch1(grh), step=foff(grh), length=nchan))
 
-    # Get boresight RA/Dec
-    α = ra(grh)
-    δ = dec(grh)
-
-    # Get beam positions
-    nrings = 4
-    beam_positions = beamrings(α, δ, nrings=nrings, dϕ=deg2rad(ring_arcsec/3600))
-
-    # Get beam names
-    src_name = get(grh, "SRC_NAME", "UNKNOWN")
-    beam_names = ["$(src_name)_R$(r)B$(b)" for r=1:nrings for b=1:6r]
-    pushfirst!(beam_names, src_name)
-    nbeams = length(beam_names)
-
     # Time step is 1 second (for now)
     Δt = 1.0
     Δjd = Δt/86400
@@ -89,6 +80,13 @@ function BeamformerRecipes.BeamformerRecipe(
     # to jdstart.
     jdmid = floor(jdstart - 0.5) + 0.5
     dut1 = get(grh, "UT1_UTC", EarthOrientation.getΔUT1(jdmid))
+
+    # Get boresight RA/Dec
+    α = ra(grh)
+    δ = dec(grh)
+
+    # Add bore sight position to "front" of beam_positions 
+    beam_positions = hcat([α, δ], beam_positions)
 
     # Get hour angles and declinations for each beam at jdstart
     hdobs = radec2hadec(beam_positions, jdstart,
@@ -130,8 +128,8 @@ function BeamformerRecipes.BeamformerRecipe(
     end
 
     # Subtract boresight delay and rate from each antenna,beam
-    delays .-= delays[:,1:1,:]
-    rates  .-= rates[ :,1:1,:]
+    delays = delays[:, 2:end, :] .- delays[:,1:1,:]
+    rates  = rates[ :, 2:end, :] .- rates[ :,1:1,:]
 
     BeamformerRecipe(
         diminfo=DimInfo(
@@ -162,6 +160,45 @@ function BeamformerRecipes.BeamformerRecipe(
             dut1=dut1
         )
     )
+end
+
+"""
+    BeamformerRecipes.BeamformerRecipe(rawname; redis, telinfo_file, ring_arcsec)
+
+Create a BeamformerRecipe for the scan corresponding to GUPPI RAW file `rawname`
+using ancillary info from `redis` and `telinfo_file`.  One beam will be at bore
+sight and 60 other beams will be arranged in four concentric rings with radii
+`1:4 .* ring_arcsec`.  The following fields will be populated:
+
+- `DimInfo` (all but `nbeams` and `ntimes`)
+- `TelInfo`
+- `ObsInfo`
+- `CalInfo`
+"""
+function BeamformerRecipes.BeamformerRecipe(
+    rawname::AbstractString;
+    redis::RedisConnection=RedisConnection(host="redishost"),
+    telinfo_file::AbstractString=joinpath(ENV["HOME"], "telinfo.yml"),
+    ring_arcsec=10
+)
+    # Read GuppiRaw.Header from `rawname`
+    @info "reading header from $rawname"
+    grh = open(io->read(io, GuppiRaw.Header), rawname)
+
+    # Get boresight RA/Dec
+    α = ra(grh)
+    δ = dec(grh)
+
+    # Get beam positions
+    nrings = 4
+    beam_positions = beamrings(α, δ, nrings=nrings, dϕ=deg2rad(ring_arcsec/3600))
+
+    # Get beam names
+    src_name = get(grh, "SRC_NAME", "UNKNOWN")
+    beam_names = ["$(src_name)_R$(r)B$(b)" for r=1:nrings for b=1:6r]
+    pushfirst!(beam_names, src_name)
+
+    BeamformerRecipe(grh, beam_names, beam_positions; redis, telinfo_file)
 end
 
 end
