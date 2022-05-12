@@ -45,7 +45,7 @@ end
 Get OBSID from `grh`.
 """
 function obsid(grh::GuppiRaw.Header)
-    telescope = lowercase(get(grh, :telescop, "meerkat"))
+    telescope = lowercase(get(grh, :telescop, "MeerKAT"))
     obsid(grh, telescope)
 end
 
