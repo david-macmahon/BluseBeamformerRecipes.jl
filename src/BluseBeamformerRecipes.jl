@@ -19,6 +19,9 @@ include("telinfo.jl")
 include("cal_solution.jl")
 include("guppiraw.jl")
 include("redisguppi.jl")
+include("targets2bfr.jl")
+
+export run_targets_listener
 
 """
     BeamformerRecipe(grh, beam_names, beam_positions; redis, telinfo_file)
