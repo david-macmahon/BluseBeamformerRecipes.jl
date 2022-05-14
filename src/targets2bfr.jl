@@ -38,8 +38,12 @@ function targets2bfr(grh::GuppiRaw.Header, redis, message, outdir,
         beam_names, beam_positions = gettargets(redis, message)
         bfr = BeamformerRecipe(grh, beam_names, beam_positions; redis=redis, telinfo_file=telinfo_file)
         mkpath(outdir)
-        bfrname = "$telescope_name-$subarray_name-$timestamp.bfr5"
-        to_hdf5(joinpath(outdir, bfrname), bfr)
+        h5name = joinpath(outdir, "$telescope_name-$subarray_name-$timestamp.bfr5")
+        if ispath(h5name)
+            @warn "refusing to overwrite existing path" _module=nothing _file=nothing
+        else
+            to_hdf5(h5name, bfr)
+        end
     end
 end
 
