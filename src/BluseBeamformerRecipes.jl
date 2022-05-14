@@ -152,8 +152,8 @@ function BeamformerRecipes.BeamformerRecipe(
         ),
         calinfo=CalInfo(; cals...),
         beaminfo=BeamInfo(
-            ras=beam_positions[1, :],
-            decs=beam_positions[2, :],
+            ras = beam_positions[1, 2:end], # Skip boresight position
+            decs= beam_positions[2, 2:end], # Skip boresight position
             src_names=beam_names
         ),
         delayinfo=DelayInfo(
