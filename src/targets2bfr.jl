@@ -23,15 +23,24 @@ list of targets.  For each subscribed message, it performs these steps:
 function targets2bfr(redis, message, outdir,
     telinfo_file::AbstractString=joinpath(ENV["HOME"], "telinfo.yml"))
 
-    _, telescope_name, subarray_name, timestamp = split(message, ':')
+    subarray_name = split(message*":::", ':')[3]
     grh = subarray2grh(redis, subarray_name)
+    targets2bfr(grh, redis, message, outdir; telinfo_file=telinfo_file)
+end
+
+function targets2bfr(grh::GuppiRaw.Header, redis, message, outdir,
+    telinfo_file::AbstractString=joinpath(ENV["HOME"], "telinfo.yml"))
+
     if isempty(grh)
-        @warn "no GUPPI RAW metadata found for subarray "
-    beam_names, beam_positions = gettargets(redis, message)
-    bfr = BeamformerRecipe(grh, beam_names, beam_positions; redis=redis, telinfo_file=telinfo_file)
-    mkpath(outdir)
-    bfrname = "$telescope_name-$subarray_name-$timestamp"
-    to_hdf5(joinpath(outdir, bfrname), bfr)
+        @warn "no GUPPI RAW metadata found for subarray $subarray_name"
+    else
+        _, telescope_name, subarray_name, timestamp = split(message, ':')
+        beam_names, beam_positions = gettargets(redis, message)
+        bfr = BeamformerRecipe(grh, beam_names, beam_positions; redis=redis, telinfo_file=telinfo_file)
+        mkpath(outdir)
+        bfrname = "$telescope_name-$subarray_name-$timestamp.bfr5"
+        to_hdf5(joinpath(outdir, bfrname), bfr)
+    end
 end
 
 """
