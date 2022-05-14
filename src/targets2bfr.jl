@@ -44,7 +44,7 @@ function gettargets(redis, key)
     targets = YAML.load(targets_json)
     beam_names = getindex.(targets, "source_id")
     beam_positions = permutedims(getindex.(targets, ["ra" "dec"]))
-    beam_names, beam_positions
+    beam_names, deg2rad.(beam_positions)
 end
 
 # This is a long running function.  It never returns until interrupted by
