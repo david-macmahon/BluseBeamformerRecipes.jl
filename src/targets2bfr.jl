@@ -32,7 +32,7 @@ function targets2bfr(grh::GuppiRaw.Header, redis, message, outdir,
     telinfo_file::AbstractString=joinpath(ENV["HOME"], "telinfo.yml"))
 
     if isempty(grh)
-        @warn "no GUPPI RAW metadata found for subarray $subarray_name"
+        @warn "no GUPPI RAW metadata found for subarray $subarray_name" _module=nothing _file=nothing
     else
         _, telescope_name, subarray_name, timestamp = split(message, ':')
         beam_names, beam_positions = gettargets(redis, message)
