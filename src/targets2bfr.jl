@@ -20,7 +20,7 @@ list of targets.  For each subscribed message, it performs these steps:
 4. Outputs that object to an HDF5 file in `outdir` using the filename
    `<telescope_name>-<subarray_name>-<timestamp>.bfr5`.
 """
-function targets2bfr(redis, message, outdir,
+function targets2bfr(redis::Redis.RedisConnectionBase, message, outdir,
     telinfo_file::AbstractString=joinpath(ENV["HOME"], "telinfo.yml"))
 
     subarray_name = split(message*":::", ':')[3]
