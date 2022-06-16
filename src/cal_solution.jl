@@ -2,15 +2,12 @@ using BeamformerRecipes
 using YAML
 
 """
-    cal_solution(redis, arrayname, unixtime) -> nants, nchan, ants, cals
+    cal_solution_key(redis, arrayname, unixtime) -> calkey
 
-Fetch the most recent telstate calibration solution for subarray `arrayname`
-from `redis` as of `unixtime`.  `nants` and `nchan` are integers used in the
-dimensioning of the data arrays, `ants` is a Vector of antenna names (in F
-engine order), and `cals` is a `Dict{Symbol, Any}` suitable for splatting into
-the keyword arguments of the `CalInfo` constructor.
+Fetch the redis key for the most recent telstate calibration solution for
+subarray `arrayname` from `redis` as of `unixtime`.
 """
-function cal_solution(redis, arrayname, unixtime)
+function cal_solution_key(redis, arrayname, unixtime)
     # zrevrangebyscore returns an OrderedSet
     rkeys = zrevrangebyscore(redis, "$arrayname:cal_solutions:index", unixtime, 0, "limit", 0, 1)
     if length(rkeys) == 0
@@ -19,8 +16,27 @@ function cal_solution(redis, arrayname, unixtime)
     end
     length(rkeys) <= 0 && error("no cal solutions found")
     length(rkeys)  > 1 && error("too many cal solutions found")
-    @info "using cal solution $(rkeys[1])"
-    strcals = hgetall(redis, rkeys[1])
+    rkeys[1]
+end
+
+"""
+    cal_solution(redis, arrayname, unixtime) -> nants, nchan, ants, cals
+    cal_solution(redis, calkey) -> nants, nchan, ants, cals
+
+Fetch the most recent calibration solution for `calkey` or for subarray
+`arrayname` from `redis` as of `unixtime`.  `nants` and `nchan` are integers
+used in the dimensioning of the data arrays, `ants` is a Vector of antenna names
+(in F engine order), and `cals` is a `Dict{Symbol, Any}` suitable for splatting
+into the keyword arguments of the `CalInfo` constructor.
+"""
+function cal_solution(redis, arrayname, unixtime)
+    calkey = cal_solution_key(redis, arrayname, unixtime)
+    cal_solution(redis, calkey)
+end
+
+function cal_solution(redis, calkey)
+    @info "using cal solution $calkey"
+    strcals = hgetall(redis, calkey)
 
     # Parse integers
     nants = parse(Int, strcals["nants"])
