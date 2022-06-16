@@ -51,8 +51,9 @@ function BeamformerRecipes.BeamformerRecipe(
     subname = subarray_name(grh)
     tstart = starttime(grh)
 
-    # Read cal_solution from redis
-    nants, nchan, ants, cals = cal_solution(redis, subname, tstart)
+    # Read cal_solution from redis, add 65 seconds to `tstart` to account for 60
+    # second delay in fetching cal solutions from MeerKAT SDP telstate database.
+    nants, nchan, ants, cals = cal_solution(redis, subname, tstart+65)
 
     # Load telinfo and then filter/reorder according to nants
     telinfo=TelInfo(telinfo_file)
