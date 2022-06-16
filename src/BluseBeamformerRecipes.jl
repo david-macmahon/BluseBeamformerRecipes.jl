@@ -73,9 +73,10 @@ function BeamformerRecipes.BeamformerRecipe(
     Δjd = Δt/86400
 
     # Get delays and delay rates each Δt for "DWELL" (or 300) seconds
+    # `delays` and `rates` also get an additional "boresight" beam.
     ntimes = ceil(Int, get(grh, "DWELL", 300) / Δt)
-    delays = Array{Float64}(undef, nants, nbeams, ntimes)
-    rates = Array{Float64}(undef, nants, nbeams, ntimes)
+    delays = Array{Float64}(undef, nants, nbeams+1, ntimes)
+    rates = Array{Float64}(undef, nants, nbeams+1, ntimes)
     times = collect(range(tstart, step=Δt, length=ntimes))
     jdstart = datetime2julian(unix2datetime(tstart))
     jds = collect(range(jdstart, step=Δjd, length=ntimes))
@@ -118,7 +119,7 @@ function BeamformerRecipes.BeamformerRecipe(
     # For each time step
     for ti in 1:ntimes
         # For each beam
-        for bi in 1:nbeams
+        for bi in 1:nbeams+1
             # Get dwd matrix for current time/beam
             td2wdw!(wdw_m, tobs[bi], dobs[bi])
             # Get delay and rate for each antenna
