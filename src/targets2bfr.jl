@@ -35,7 +35,7 @@ function targets2bfr(grh::GuppiRaw.Header, redis, message, outdir,
         @warn "no GUPPI RAW metadata found for subarray $subarray_name" _module=nothing _file=nothing
     else
         _, telescope_name, subarray_name, timestamp = split(message, ':')
-        beam_names, beam_positions = gettargets(redis, message)
+        beam_names, beam_positions = gettargets(redis, message; limit=64)
         bfr = BeamformerRecipe(grh, beam_names, beam_positions; redis=redis, telinfo_file=telinfo_file)
         mkpath(outdir)
         h5name = joinpath(outdir, "$telescope_name-$subarray_name-$timestamp.bfr5")
@@ -52,9 +52,12 @@ Retrieves a JSON encoded targets list from `redis` using `key`, parses it, and
 returns `beam_names` and `beam_positions` Arrays suitable for passing to
 `BeamformerRecipe`.
 """
-function gettargets(redis, key)
+function gettargets(redis, key; limit=typemax(UInt))
     targets_json = get(redis, key)
     targets = YAML.load(targets_json)
+    if length(targets) > limit
+        targets = targets[1:limit]
+    end
     beam_names = getindex.(targets, "source_id")
     beam_positions = permutedims(getindex.(targets, ["ra" "dec"]))
     beam_names, deg2rad.(beam_positions)
