@@ -86,7 +86,7 @@ function run_targets_listener(args...)
         try
             targets2bfr(redis, message, outdir, telinfo_file)
         catch e
-            @error e _module=nothing _file=nothing
+            showerror(stderr, e, catch_backtrace())
         end
     end)
     @info "subscribed to target-selector:targets"
