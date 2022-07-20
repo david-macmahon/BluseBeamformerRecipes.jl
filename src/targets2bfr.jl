@@ -25,7 +25,7 @@ function targets2bfr(redis::Redis.RedisConnectionBase, message, outdir,
 
     subarray_name = split(message*":::", ':')[3]
     grh = subarray2grh(redis, subarray_name)
-    targets2bfr(grh, redis, message, outdir; telinfo_file=telinfo_file)
+    targets2bfr(grh, redis, message, outdir, telinfo_file)
 end
 
 function targets2bfr(grh::GuppiRaw.Header, redis, message, outdir,
