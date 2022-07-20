@@ -31,16 +31,19 @@ end
 function targets2bfr(grh::GuppiRaw.Header, redis, message, outdir,
     telinfo_file::AbstractString=joinpath(ENV["HOME"], "telinfo.yml"))
 
-    if isempty(grh)
+    _, telescope_name, subarray_name, timestamp = split(message*":::", ':')
+
+    if isempty(timestamp)
+        @warn "got malformed message \"$message\"" _module=nothing _file=nothing
+    elseif isempty(grh)
         @warn "no GUPPI RAW metadata found for subarray $subarray_name" _module=nothing _file=nothing
     else
-        _, telescope_name, subarray_name, timestamp = split(message, ':')
         beam_names, beam_positions = gettargets(redis, message; limit=64)
         bfr = BeamformerRecipe(grh, beam_names, beam_positions; redis=redis, telinfo_file=telinfo_file)
         mkpath(outdir)
         h5name = joinpath(outdir, "$telescope_name-$subarray_name-$timestamp.bfr5")
         if ispath(h5name)
-            @warn "refusing to overwrite existing path" _module=nothing _file=nothing
+            @warn "refusing to overwrite existing path \"$h5name\"" _module=nothing _file=nothing
         else
             to_hdf5(h5name, bfr)
         end
