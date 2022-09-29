@@ -1,4 +1,5 @@
 using Blio
+using Dates
 
 """
     subarray_name(grh::GuppiRaw.Header)
@@ -35,7 +36,7 @@ Get OBSID from `grh`, using `telescope` as the telescope component.
 """
 function obsid(grh::GuppiRaw.Header, telescope)
     subname = subarray_name(grh)
-    timestamp = Libc.strftime("%Y%m%dT%H%M%SZ", starttime(grh))
+    timestamp = Dates.format(unix2datetime(starttime(grh)), "yyyymmddTHHMMSSZ")
     join((telescope, subname, timestamp), ':')
 end
 
