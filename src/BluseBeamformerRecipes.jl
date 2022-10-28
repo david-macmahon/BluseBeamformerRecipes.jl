@@ -75,6 +75,10 @@ function BeamformerRecipes.BeamformerRecipe(
     # Get delays and delay rates each Δt for "DWELL" (or 300) seconds
     # `delays` and `rates` also get an additional "boresight" beam.
     ntimes = ceil(Int, get(grh, "DWELL", 300) / Δt)
+
+    # Log dimensions for diagnostics
+    @info "using dimensions" nants nbeams ntimes
+
     delays = Array{Float64}(undef, nants, nbeams+1, ntimes)
     rates = Array{Float64}(undef, nants, nbeams+1, ntimes)
     times = collect(range(tstart, step=Δt, length=ntimes))
