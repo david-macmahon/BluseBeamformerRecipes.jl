@@ -1,7 +1,7 @@
 name = "BluseBeamformerRecipes"
 uuid = "c979d30c-c9f2-448b-a26f-48ad51edd7af"
 authors = ["David MacMahon <davidm@astro.berkeley.edu> and contributors"]
-version = "0.1.2"
+version = "0.1.3"
 
 [deps]
 BeamformerRecipes = "947ddd50-af71-4e5f-8796-398fc6122734"
