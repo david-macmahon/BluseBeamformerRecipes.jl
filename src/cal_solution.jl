@@ -47,6 +47,7 @@ function cal_solution(redis, calkey)
     if nants > 64
         nants ÷= 8
     end
+    @info "cal solution metadata" nants nchan ants
 
     # Create Arrays and copy data into them
     # TODO Fix cal_K type upstream and in redis
