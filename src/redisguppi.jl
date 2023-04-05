@@ -12,7 +12,7 @@ function redis2grh(redis, key)
     # Currently, Blio can only create a GuppiRaw.Header from a file, so we
     # have to create a GUPPI RAW header in a temporary file using key-value
     # pairs from the redis hash.
-    mktemp() do path, grhio
+    grh = mktemp() do path, grhio
         for (k,v) in redishash
             write(grhio, rpad(k,  8)) # 8 + 2 + 70 = 80
             write(grhio, "= ")
@@ -24,6 +24,12 @@ function redis2grh(redis, key)
         seekstart(grhio)
         read(grhio, GuppiRaw.Header, skip_padding=false)
     end
+    try
+        @info "got GuppiRaw.Header from redis" key grh[:fenchan] grh[:nants] grh[:nstrm] grh[:hntime] grh[:hnchan] grh[:hclocks] grh[:schan]
+    catch
+        @info "got GuppiRaw.Header from redis" key keys(grh)
+    end
+    grh
 end
 
 """
