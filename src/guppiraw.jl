@@ -1,4 +1,5 @@
 using Blio
+using Blio.GuppiRaw: getntime
 using Dates
 
 """
@@ -17,12 +18,12 @@ Calculate starttime from Header in seconds since the Unix epoch.
 """
 function starttime(grh::GuppiRaw.Header)
     try
-        @info "calculating starttime from GuppiRaw.Header" grh[:tbin] ntime(grh) grh[:piperblk] grh[:pktstart] grh[:synctime]
+        @info "calculating starttime from GuppiRaw.Header" grh[:tbin] getntime(grh) grh[:piperblk] grh[:pktstart] grh[:synctime]
     catch
         @info "calculating starttime from GuppiRaw.Header" keys(grh)
     end
     # Calc seconds per block
-    secs_per_blk = grh[:tbin] * ntime(grh)
+    secs_per_blk = grh[:tbin] * getntime(grh)
 
     # Calc seconds per PKTIDX
     secs_per_pktidx = secs_per_blk / grh[:piperblk]
