@@ -1,5 +1,5 @@
 using Blio
-using Blio.GuppiRaw: getntime
+using Blio.GuppiRaw: getntime, chanfreq
 using Dates
 
 """
