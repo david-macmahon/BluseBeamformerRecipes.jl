@@ -20,12 +20,18 @@ list of targets.  For each subscribed message, it performs these steps:
 4. Outputs that object to an HDF5 file in `outdir` using the filename
    `<telescope_name>-<subarray_name>-<timestamp>.bfr5`.
 """
-function targets2bfr(redis::Redis.RedisConnectionBase, message, outdir,
+function targets2bfr(redis, message, outdir,
     telinfo_file::AbstractString=joinpath(ENV["HOME"], "telinfo.yml"))
-
-    subarray_name = split(message*":::", ':')[3]
-    grh = subarray2grh(redis, subarray_name)
-    targets2bfr(grh, redis, message, outdir, telinfo_file)
+    try
+        subarray_name = split(message*":::", ':')[3]
+        grh = subarray2grh(redis, subarray_name)
+        targets2bfr(grh, redis, message, outdir, telinfo_file)
+    catch e
+        e isa RecipeConsistencyError || rethrow()
+        # Alert on every refusal (no dedupe) via the shared slack_proxy channel:
+        slack_alert(redis, ":warning: refused to emit recipe for `$message`: $(e.msg)")
+        rethrow()
+    end
 end
 
 function targets2bfr(grh::GuppiRaw.Header, redis, message, outdir,
@@ -38,6 +44,17 @@ function targets2bfr(grh::GuppiRaw.Header, redis, message, outdir,
     elseif isempty(grh)
         @warn "no GUPPI RAW metadata found for subarray $subarray_name" _module=nothing _file=nothing
     else
+        # Consistency check: the scan start time computed from the raw header
+        # must agree with the timestamp embedded in the targets message (which
+        # is independent of the per-node status hashes).  A large disagreement
+        # indicates a stale header, which also mis-selects the cal solution.
+        timing_keys = (:tbin, :piperblk, :pktstart, :synctime, :blocsize, :obsnchan)
+        if all(k -> haskey(grh, k), timing_keys)
+            check_scan_timestamp(starttime(grh), message)
+        else
+            @warn "raw header is missing timing fields, skipping " *
+                  "scan-timestamp consistency check" _module=nothing _file=nothing
+        end
         beam_names, beam_positions = gettargets(redis, message; limit=64)
         bfr = BeamformerRecipe(grh, beam_names, beam_positions; redis=redis, telinfo_file=telinfo_file)
         mkpath(outdir)
