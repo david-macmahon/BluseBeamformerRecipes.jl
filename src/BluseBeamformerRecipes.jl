@@ -54,7 +54,22 @@ function BeamformerRecipes.BeamformerRecipe(
 
     # Read cal_solution from redis, add 65 seconds to `tstart` to account for 60
     # second delay in fetching cal solutions from MeerKAT SDP telstate database.
-    nants, nchan, ants, cals = cal_solution(redis, subname, tstart+65)
+    calkey = cal_solution_key(redis, subname, tstart+65)
+    nants, nchan, ants, cals = cal_solution(redis, calkey)
+
+    # Consistency checks: refuse to emit a recipe built from mutually
+    # inconsistent metadata (see consistency.jl).  On 2026-11-24 a stale
+    # status hash (blpn64/0) supplied both a stale NANTS and a stale
+    # starttime, and the "latest" cal solution was from the previous,
+    # differently-sized configuration -- every input agreed with every other
+    # input and a 62-antenna recipe was emitted for a 55-antenna session.
+    if haskey(grh, :nants)
+        check_nants(grh[:nants], nants, calkey)
+    else
+        @warn "raw header has no NANTS field, skipping header/cal-solution " *
+              "nant consistency check" _module=nothing _file=nothing
+    end
+    check_antenna_names(subname, ants, lrange(redis, "$subname:antennas", 0, -1))
 
     # Load telinfo and then filter/reorder according to nants
     telinfo=TelInfo(telinfo_file)
