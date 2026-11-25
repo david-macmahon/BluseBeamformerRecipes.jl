@@ -10,11 +10,11 @@ subarray `arrayname` from `redis` as of `unixtime`.
 function cal_solution_key(redis, arrayname, unixtime)
     # zrevrangebyscore returns an OrderedSet
     rkeys = zrevrangebyscore(redis, "$arrayname:cal_solutions:index", unixtime, 0, "limit", 0, 1)
-    if length(rkeys) == 0
-        @warn "no cal solutions found on or before $unixtime, using fallback hack" _module=nothing _file=nothing
-        rkeys = ["array_1:cal_solutions:20220117T035342Z"]
-    end
-    length(rkeys) <= 0 && error("no cal solutions found")
+    # NOTE: no fallback hack.  Silently using an old (or hardcoded) cal
+    # solution produces recipes whose antenna set does not match the current
+    # subarray; refusing loudly is much safer.
+    length(rkeys) == 0 && throw(RecipeConsistencyError(
+        "no cal solutions found on or before unixtime $unixtime for $arrayname"))
     length(rkeys)  > 1 && error("too many cal solutions found")
     rkeys[1]
 end
@@ -47,6 +47,9 @@ function cal_solution(redis, calkey)
     if nants > 64
         nants ÷= 8
     end
+    nants == length(ants) || throw(RecipeConsistencyError(
+        "cal solution $calkey is internally inconsistent: nants=$nants " *
+        "but antenna_list has $(length(ants)) entries"))
     @info "cal solution metadata" nants nchan ants
 
     # Create Arrays and copy data into them
