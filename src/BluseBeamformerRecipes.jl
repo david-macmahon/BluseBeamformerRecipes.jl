@@ -16,12 +16,13 @@ for name in names(BeamformerRecipes)
 end
 
 include("telinfo.jl")
+include("consistency.jl")
 include("cal_solution.jl")
 include("guppiraw.jl")
 include("redisguppi.jl")
 include("targets2bfr.jl")
 
-export run_targets_listener
+export run_targets_listener, RecipeConsistencyError, slack_alert
 
 """
     BeamformerRecipe(grh, beam_names, beam_positions; redis, telinfo_file)
